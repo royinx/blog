@@ -1,5 +1,6 @@
 import cv2
-from skimage.color import rgb2hsv, hsv2rgb
+# from skimage.color import rgb2hsv, hsv2rgb
+from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
 from sklearn.cluster import KMeans , DBSCAN
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -136,7 +137,7 @@ def extract_color(rgb_img:np.array, color_fmt = 'hsv'):
 
     # print(img[0,0])
     if color_fmt == 'hsv':
-        hsv_img = rgb2hsv(rgb_img)
+        hsv_img = rgb_to_hsv(rgb_img/255)
     color_list, percent = color_filter.extraction(hsv_img,color_fmt,plot = False)
 
     # convert color_list into RGB 
@@ -144,7 +145,7 @@ def extract_color(rgb_img:np.array, color_fmt = 'hsv'):
     if color_fmt == 'hsv':
         rgb = []
         for idx,color in enumerate(color_list):
-            rgb.append((hsv2rgb(np.tile(color.reshape(1,3),[1,1,1]))*255).astype(np.uint8))
+            rgb.append((hsv_to_rgb(np.tile(color.reshape(1,3),[1,1,1]))*255).astype(np.uint8))
         color_list = np.array(rgb).squeeze()
 
     print(color_list,percent)
