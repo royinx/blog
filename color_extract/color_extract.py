@@ -3,7 +3,10 @@ import cv2
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
 from sklearn.cluster import KMeans , DBSCAN
 import numpy as np 
+
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib.pyplot as plt
+
 
 class ColorFilter(object):
     def __init__(self):
@@ -17,6 +20,7 @@ class ColorFilter(object):
                                                  np.logical_and(image[:,:,2]>=color[2]-std, image[:,:,2]<=color[2]+std)],
                                                  axis=0))
             color_percent.append(len(image[color_pixel_array])/(image.size/3)*100)
+        print(color_percent)
         return color_percent
 
     def color_match(self, img, colors: np.array , target_percent: np.array ,color_fmt ,color_threshold = 10 ): # image and pixel color matching , color_threshold: percent_std_dev, color_range: RGB +- 15
@@ -66,9 +70,6 @@ class ColorFilter(object):
             colors = np.array([np.average(img[idx==class_],axis = 0) for class_ in range(no_class)])#,dtype=np.uint8)
             percent = np.array([ np.divide(sum(idx==class_)*100,len(idx)) for class_ in range(no_class)])#,dtype=int)
             def plot_HSV(img,idx):
-                from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-                import matplotlib.pyplot as plt
-
                 fig = plt.figure()
                 fig.set_size_inches(20, 15)
                 ax = fig.add_subplot(111, projection='3d')
@@ -89,9 +90,7 @@ class ColorFilter(object):
             colors = np.array([np.average(img[idx==class_],axis = 0) for class_ in range(no_class)],dtype=np.uint8)
             percent = np.array([ np.divide(sum(idx==class_)*100,len(idx)) for class_ in range(no_class)],dtype=int)
             def plot_RGB(img,idx):
-                from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-                import matplotlib.pyplot as plt
-
+                
                 fig = plt.figure()
                 fig.set_size_inches(20, 15)
                 ax = fig.add_subplot(111, projection='3d')
@@ -125,42 +124,37 @@ class ColorFilter(object):
             eps = 0.05
             min_sample = 50
         elif color_fmt == 'rgb':
-            eps = 3.5
-            min_sample = 20
+            eps = 5
+            min_sample = 50
 
         color_list, percent = self.dominantColors_DBSCAN(image,color_fmt, plot,eps, min_sample)
         return color_list, percent
 
-def extract_color(rgb_img:np.array, color_fmt = 'hsv'):
+def extract_color(img:np.array,plot , color_fmt = 'hsv'):
     color_filter = ColorFilter()
-    rgb_img = color_filter.resize(rgb_img,100)
+    img = color_filter.resize(img,100)
 
-    # print(img[0,0])
     if color_fmt == 'hsv':
-        hsv_img = rgb_to_hsv(rgb_img/255)
-    color_list, percent = color_filter.extraction(hsv_img,color_fmt,plot = False)
+        img = rgb_to_hsv(img/255)
+
+    color_list, percent = color_filter.extraction(img,color_fmt,plot)
 
     # convert color_list into RGB 
-    hsv_color_list = color_list
-    if color_fmt == 'hsv':
-        rgb = []
-        for idx,color in enumerate(color_list):
-            rgb.append((hsv_to_rgb(np.tile(color.reshape(1,3),[1,1,1]))*255).astype(np.uint8))
-        color_list = np.array(rgb).squeeze()
+    # if color_fmt == 'hsv':
+    #     hsv_color_list = color_list
+    #     rgb = []
+    #     for idx,color in enumerate(color_list):
+    #         rgb.append((hsv_to_rgb(np.tile(color.reshape(1,3),[1,1,1]))*255).astype(np.uint8))
+    #     color_list = np.array(rgb).squeeze()
 
-    print(color_list,percent)
+
+    bl = color_filter.color_match(img, color_list, percent, color_fmt)
     
-    # bl = color_filter.color_match(rgb_img, color_list, percent)
-    bl = color_filter.color_match(hsv_img, hsv_color_list, percent, color_fmt)
-    
+    print(color_list,percent,bl)
     return(bl)
 
 if __name__ == '__main__':
     file_name = 'jacket.jpg'
     img = cv2.imread(file_name)
     rgb_img = img[:,:,[2,1,0]]
-
-    # plt.imshow(rgb_img)
-    # plt.show()
-    extract_color(rgb_img,color_fmt = 'hsv')
-
+    extract_color(rgb_img, color_fmt = 'rgb', plot = True)
