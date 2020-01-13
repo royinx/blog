@@ -1,0 +1,3 @@
+[submodule "color_extract"]
+	path = color_extract
+	url = https://github.com/royinx/color_extract
